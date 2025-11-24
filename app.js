@@ -463,12 +463,14 @@ class BudgetApp {
         const income = [];
         const expenses = [];
 
-        // Create a map of dates to balance for quick lookup
+        // Create a map of dates to balance and label for quick lookup
         const dateBalanceMap = {};
         timeline.forEach((point, index) => {
+            const date = new Date(point.date);
+            const label = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             dateBalanceMap[point.date] = {
                 balance: point.balance,
-                index: index
+                label: label  // Use the formatted label instead of index
             };
         });
 
@@ -501,7 +503,7 @@ class BudgetApp {
                 // Add income marker
                 if (incomeEvents.length > 0) {
                     income.push({
-                        x: balanceInfo.index,
+                        x: balanceInfo.label,  // Use label instead of index
                         y: balanceInfo.balance,
                         tooltip: incomeTooltip,
                         events: incomeEvents
@@ -511,7 +513,7 @@ class BudgetApp {
                 // Add expense marker
                 if (expenseEvents.length > 0) {
                     expenses.push({
-                        x: balanceInfo.index,
+                        x: balanceInfo.label,  // Use label instead of index
                         y: balanceInfo.balance,
                         tooltip: expenseTooltip,
                         events: expenseEvents

@@ -142,20 +142,44 @@ class BudgetApp {
             type: 'line',
             data: {
                 labels: [],
-                datasets: [{
-                    label: 'Balance',
-                    data: [],
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
-                    borderWidth: 3,
-                    fill: true,
-                    tension: 0.4,
-                    pointRadius: 0,
-                    pointHoverRadius: 6,
-                    pointHoverBackgroundColor: '#8b5cf6',
-                    pointHoverBorderColor: '#fff',
-                    pointHoverBorderWidth: 2
-                }]
+                datasets: [
+                    {
+                        label: 'Balance',
+                        data: [],
+                        borderColor: '#8b5cf6',
+                        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                        borderWidth: 3,
+                        fill: true,
+                        tension: 0.4,
+                        pointRadius: 0,
+                        pointHoverRadius: 6,
+                        pointHoverBackgroundColor: '#8b5cf6',
+                        pointHoverBorderColor: '#fff',
+                        pointHoverBorderWidth: 2,
+                        segment: {
+                            // Make line red when balance is negative
+                            borderColor: (ctx) => {
+                                const value = ctx.p1.parsed.y;
+                                return value < 0 ? '#ef4444' : '#8b5cf6';
+                            },
+                            backgroundColor: (ctx) => {
+                                const value = ctx.p1.parsed.y;
+                                return value < 0 ? 'rgba(239, 68, 68, 0.2)' : 'rgba(139, 92, 246, 0.1)';
+                            }
+                        }
+                    },
+                    {
+                        // Zero threshold line
+                        label: 'Zero Line',
+                        data: [],
+                        borderColor: '#ef4444',
+                        borderWidth: 2,
+                        borderDash: [10, 5],
+                        pointRadius: 0,
+                        fill: false,
+                        tension: 0
+                    }
+                ]
             },
             options: {
                 responsive: true,
@@ -176,7 +200,21 @@ class BudgetApp {
                         displayColors: false,
                         callbacks: {
                             label: function (context) {
-                                return 'Balance: $' + context.parsed.y.toFixed(2);
+                                if (context.datasetIndex === 1) return null; // Hide zero line tooltip
+                                const value = context.parsed.y;
+                                const color = value < 0 ? '⚠️ NEGATIVE: $' : value === 0 ? '⚠️ ZERO: $' : 'Balance: $';
+                                return color + value.toFixed(2);
+                            }
+                        }
+                    },
+                    annotation: {
+                        annotations: {
+                            dangerZone: {
+                                type: 'box',
+                                yMin: -Infinity,
+                                yMax: 0,
+                                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                borderWidth: 0
                             }
                         }
                     }
@@ -195,11 +233,23 @@ class BudgetApp {
                     },
                     y: {
                         grid: {
-                            color: 'rgba(71, 85, 105, 0.3)',
+                            color: (context) => {
+                                // Make zero line extra visible
+                                if (context.tick.value === 0) {
+                                    return 'rgba(239, 68, 68, 0.5)';
+                                }
+                                return 'rgba(71, 85, 105, 0.3)';
+                            },
                             drawBorder: false
                         },
                         ticks: {
-                            color: '#cbd5e1',
+                            color: (context) => {
+                                // Highlight zero value
+                                if (context.tick.value === 0) {
+                                    return '#ef4444';
+                                }
+                                return '#cbd5e1';
+                            },
                             callback: function (value) {
                                 return '$' + value.toFixed(0);
                             }
@@ -233,9 +283,19 @@ class BudgetApp {
                 return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
             });
             const balances = data.timeline.map(point => point.balance);
+            const zeroLine = data.timeline.map(() => 0); // Zero threshold line
 
             this.chart.data.labels = labels_arr;
             this.chart.data.datasets[0].data = balances;
+            this.chart.data.datasets[1].data = zeroLine; // Update zero line
+
+            // Check if balance ever goes to zero or negative
+            const hasZeroOrNegative = balances.some(b => b <= 0);
+            const minBalance = Math.min(...balances);
+
+            // Show warning banner if balance hits zero or negative
+            this.updateDangerWarning(hasZeroOrNegative, minBalance, data.timeline);
+
             this.chart.update();
 
             // Update current balance (balance at current date)
@@ -245,13 +305,62 @@ class BudgetApp {
             } else {
                 this.currentBalance = data.ending_balance;
             }
-            document.getElementById('currentBalance').textContent = '$' + this.currentBalance.toFixed(2);
+
+            // Update balance display with danger styling
+            const balanceElement = document.getElementById('currentBalance');
+            balanceElement.textContent = '$' + this.currentBalance.toFixed(2);
+
+            const balanceDisplay = document.querySelector('.balance-display');
+            if (this.currentBalance < 0) {
+                balanceDisplay.classList.add('danger');
+                balanceDisplay.classList.remove('warning');
+            } else if (this.currentBalance === 0) {
+                balanceDisplay.classList.add('warning');
+                balanceDisplay.classList.remove('danger');
+            } else if (this.currentBalance < 100) {
+                balanceDisplay.classList.add('warning');
+                balanceDisplay.classList.remove('danger');
+            } else {
+                balanceDisplay.classList.remove('danger', 'warning');
+            }
 
             // Update stats
             document.getElementById('periodEvents').textContent = data.events.length;
 
         } catch (error) {
             console.error('Error updating timeline:', error);
+        }
+    }
+
+    updateDangerWarning(hasZeroOrNegative, minBalance, timeline) {
+        // Remove existing warning if present
+        let warning = document.getElementById('dangerWarning');
+
+        if (hasZeroOrNegative) {
+            // Find when balance hits zero or negative
+            const dangerPoints = timeline.filter(p => p.balance <= 0);
+            const firstDangerDate = dangerPoints.length > 0 ? dangerPoints[0].date : null;
+
+            if (!warning) {
+                warning = document.createElement('div');
+                warning.id = 'dangerWarning';
+                warning.className = 'danger-warning';
+                document.querySelector('.chart-container').insertAdjacentElement('beforebegin', warning);
+            }
+
+            warning.innerHTML = `
+                <div class="warning-content">
+                    <span class="warning-icon">⚠️</span>
+                    <div class="warning-text">
+                        <strong>DANGER: Balance Hits Zero!</strong>
+                        <p>Your balance reaches $${minBalance.toFixed(2)} on ${new Date(firstDangerDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. 
+                        ${minBalance < 0 ? 'You will be overdrawn!' : 'Critical low balance!'}</p>
+                    </div>
+                </div>
+            `;
+            warning.style.display = 'block';
+        } else if (warning) {
+            warning.style.display = 'none';
         }
     }
 

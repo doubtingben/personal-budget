@@ -227,9 +227,11 @@ class BudgetApp {
                                     return color + value.toFixed(2);
                                 }
 
-                                // Event markers
+                                // Event markers (datasets 2 and 3)
                                 if (context.datasetIndex === 2 || context.datasetIndex === 3) {
-                                    const dataPoint = context.raw;
+                                    const dataset = context.chart.data.datasets[context.datasetIndex];
+                                    const dataPoint = dataset.data[context.dataIndex];
+
                                     if (dataPoint && dataPoint.events) {
                                         return dataPoint.events.map(e => {
                                             const amount = e.amount >= 0 ? `+$${e.amount.toFixed(2)}` : `-$${Math.abs(e.amount).toFixed(2)}`;
@@ -333,14 +335,12 @@ class BudgetApp {
 
             // Add income and expense event markers
             if (this.chart.data.datasets.length > 2) {
-                this.chart.data.datasets[2].data = eventMarkers.income.map(m => ({ x: m.x, y: m.y }));
-                this.chart.data.datasets[2].tooltip = eventMarkers.income.map(m => m.tooltip);
-                this.chart.data.datasets[3].data = eventMarkers.expenses.map(m => ({ x: m.x, y: m.y }));
-                this.chart.data.datasets[3].tooltip = eventMarkers.expenses.map(m => m.tooltip);
+                this.chart.data.datasets[2].data = eventMarkers.income;
+                this.chart.data.datasets[3].data = eventMarkers.expenses;
             } else {
                 this.chart.data.datasets.push({
                     label: 'Income Events',
-                    data: eventMarkers.income.map(m => ({ x: m.x, y: m.y })),
+                    data: eventMarkers.income,
                     backgroundColor: '#10b981',
                     borderColor: '#10b981',
                     borderWidth: 2,
@@ -348,12 +348,11 @@ class BudgetApp {
                     pointHoverRadius: 8,
                     pointStyle: 'circle',
                     showLine: false,
-                    order: 1,
-                    tooltip: eventMarkers.income.map(m => m.tooltip)
+                    order: 1
                 });
                 this.chart.data.datasets.push({
                     label: 'Expense Events',
-                    data: eventMarkers.expenses.map(m => ({ x: m.x, y: m.y })),
+                    data: eventMarkers.expenses,
                     backgroundColor: '#ef4444',
                     borderColor: '#ef4444',
                     borderWidth: 2,
@@ -361,8 +360,7 @@ class BudgetApp {
                     pointHoverRadius: 8,
                     pointStyle: 'circle',
                     showLine: false,
-                    order: 1,
-                    tooltip: eventMarkers.expenses.map(m => m.tooltip)
+                    order: 1
                 });
             }
 

@@ -347,11 +347,11 @@ class BudgetApp {
         const startDate = this.addDays(this.currentDate, -this.pastDays);
         const endDate = this.addDays(this.currentDate, this.futureDays);
 
-        const labels = this.selectedLabels.length > 0 ? this.selectedLabels.join(',') : '';
-
+        // Don't pass labels to API - we want all events for balance calculation
+        // Labels will only filter event marker visibility
         try {
             const response = await fetch(
-                `/api/timeline?start_date=${startDate}&end_date=${endDate}&starting_balance=${this.startingBalance}&labels=${labels}`
+                `/api/timeline?start_date=${startDate}&end_date=${endDate}&starting_balance=${this.startingBalance}`
             );
             const data = await response.json();
 
@@ -459,26 +459,38 @@ class BudgetApp {
 
             this.chart.update();
 
+            // Find current balance at the current date
+            const currentDatePoint = data.timeline.find(p => p.date === this.currentDate);
+            const currentBalanceAtDate = currentDatePoint ? currentDatePoint.balance : this.startingBalance;
+
             // Update ending balance (balance at end of timeline)
             this.currentBalance = data.ending_balance;
 
-            // Update balance display with danger styling
-            const balanceElement = document.getElementById('currentBalance');
-            balanceElement.textContent = '$' + this.currentBalance.toFixed(2);
+            // Update starting balance display
+            const startingBalanceElement = document.getElementById('startingBalanceDisplay');
+            startingBalanceElement.textContent = '$' + data.starting_balance.toFixed(2);
 
-            const balanceDisplay = document.querySelector('.balance-display');
-            if (this.currentBalance < 0) {
-                balanceDisplay.classList.add('danger');
-                balanceDisplay.classList.remove('warning');
-            } else if (this.currentBalance === 0) {
-                balanceDisplay.classList.add('warning');
-                balanceDisplay.classList.remove('danger');
-            } else if (this.currentBalance < 100) {
-                balanceDisplay.classList.add('warning');
-                balanceDisplay.classList.remove('danger');
+            // Update current balance display (at current date) with danger styling
+            const currentBalanceElement = document.getElementById('currentBalance');
+            currentBalanceElement.textContent = '$' + currentBalanceAtDate.toFixed(2);
+
+            const currentBalanceDisplay = document.getElementById('currentBalanceDisplay');
+            if (currentBalanceAtDate < 0) {
+                currentBalanceDisplay.classList.add('danger');
+                currentBalanceDisplay.classList.remove('warning');
+            } else if (currentBalanceAtDate === 0) {
+                currentBalanceDisplay.classList.add('warning');
+                currentBalanceDisplay.classList.remove('danger');
+            } else if (currentBalanceAtDate < 100) {
+                currentBalanceDisplay.classList.add('warning');
+                currentBalanceDisplay.classList.remove('danger');
             } else {
-                balanceDisplay.classList.remove('danger', 'warning');
+                currentBalanceDisplay.classList.remove('danger', 'warning');
             }
+
+            // Update ending balance display
+            const endingBalanceElement = document.getElementById('endingBalance');
+            endingBalanceElement.textContent = '$' + data.ending_balance.toFixed(2);
 
             // Update stats
             document.getElementById('periodEvents').textContent = data.events.length;
@@ -489,6 +501,30 @@ class BudgetApp {
     }
 
     createEventMarkers(timeline, events) {
+        // Filter events by selected labels (only affects visibility, not balance calculation)
+        let filteredEvents = events;
+        if (this.selectedLabels.length > 0) {
+            filteredEvents = events.filter(event => {
+                const eventLabels = event.labels || [];
+                const hasUnlabeled = this.selectedLabels.includes('__unlabeled__');
+                const hasRegularLabels = this.selectedLabels.some(label =>
+                    label !== '__unlabeled__' && eventLabels.includes(label)
+                );
+
+                // Show event if:
+                // - "unlabeled" is selected and event has no labels, OR
+                // - event has any of the selected regular labels
+                if (hasUnlabeled && eventLabels.length === 0) {
+                    return true;
+                }
+                if (hasRegularLabels) {
+                    return true;
+                }
+
+                return false;
+            });
+        }
+
         // Create arrays for income and expense events with their balance positions
         const income = [];
         const expenses = [];
@@ -504,9 +540,9 @@ class BudgetApp {
             };
         });
 
-        // Group events by date to create marker data
+        // Group filtered events by date to create marker data
         const eventsByDate = {};
-        events.forEach(event => {
+        filteredEvents.forEach(event => {
             if (!eventsByDate[event.date]) {
                 eventsByDate[event.date] = [];
             }
@@ -594,6 +630,12 @@ class BudgetApp {
 
             const select = document.getElementById('labelFilter');
             select.innerHTML = '<option value="">All Labels</option>';
+
+            // Add "unlabeled" option
+            const unlabeledOption = document.createElement('option');
+            unlabeledOption.value = '__unlabeled__';
+            unlabeledOption.textContent = 'Unlabeled';
+            select.appendChild(unlabeledOption);
 
             data.labels.forEach(label => {
                 const option = document.createElement('option');

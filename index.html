@@ -23,8 +23,16 @@
             </div>
             <div class="header-right">
                 <div class="balance-display">
-                    <span class="balance-label">Ending Balance</span>
+                    <span class="balance-label">Starting Balance</span>
+                    <span class="balance-amount" id="startingBalanceDisplay">$1,000.00</span>
+                </div>
+                <div class="balance-display" id="currentBalanceDisplay">
+                    <span class="balance-label">Current Balance</span>
                     <span class="balance-amount" id="currentBalance">$1,000.00</span>
+                </div>
+                <div class="balance-display">
+                    <span class="balance-label">Ending Balance</span>
+                    <span class="balance-amount" id="endingBalance">$1,000.00</span>
                 </div>
                 <button class="btn btn-primary" id="addEventBtn">
                     <span>+ Add Event</span>
@@ -43,7 +51,9 @@
                 <label for="labelFilter">Filter by Labels</label>
                 <select id="labelFilter" multiple>
                     <option value="">All Labels</option>
+                    <option value="__unlabeled__">Unlabeled</option>
                 </select>
+                <a href="labels.html" class="label-manage-link">Manage Labels →</a>
             </div>
 
             <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>

@@ -1,0 +1,5 @@
+# No external dependencies required
+# Using Python standard library only:
+# - sqlite3 for database
+# - http.server for web server
+# - json for API responses

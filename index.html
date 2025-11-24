@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget Visualization</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="header-left">
+                <h1 class="title">💰 Budget Visualization</h1>
+                <p class="subtitle">Track your financial journey</p>
+            </div>
+            <div class="header-right">
+                <div class="balance-display">
+                    <span class="balance-label">Current Balance</span>
+                    <span class="balance-amount" id="currentBalance">$1,000.00</span>
+                </div>
+                <button class="btn btn-primary" id="addEventBtn">
+                    <span>+ Add Event</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Controls -->
+        <div class="controls-panel">
+            <div class="control-group">
+                <label for="startingBalance">Starting Balance</label>
+                <input type="number" id="startingBalance" value="1000" step="0.01">
+            </div>
+            
+            <div class="control-group">
+                <label for="pastDays">Past Days: <span id="pastDaysValue">30</span></label>
+                <input type="range" id="pastDays" min="0" max="365" value="30" class="slider">
+            </div>
+            
+            <div class="control-group">
+                <label for="futureDays">Future Days: <span id="futureDaysValue">30</span></label>
+                <input type="range" id="futureDays" min="0" max="365" value="30" class="slider">
+            </div>
+            
+            <div class="control-group">
+                <label for="labelFilter">Filter by Labels</label>
+                <select id="labelFilter" multiple>
+                    <option value="">All Labels</option>
+                </select>
+            </div>
+            
+            <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>
+        </div>
+
+        <!-- Chart -->
+        <div class="chart-container">
+            <canvas id="balanceChart"></canvas>
+        </div>
+
+        <!-- Events List -->
+        <div class="events-section">
+            <div class="section-header">
+                <h2>Account Events</h2>
+                <div class="event-stats">
+                    <span class="stat">
+                        <span class="stat-label">Total Events:</span>
+                        <span class="stat-value" id="totalEvents">0</span>
+                    </span>
+                    <span class="stat">
+                        <span class="stat-label">In Period:</span>
+                        <span class="stat-value" id="periodEvents">0</span>
+                    </span>
+                </div>
+            </div>
+            
+            <div class="events-grid" id="eventsGrid">
+                <!-- Events will be dynamically loaded here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Add/Edit Event Modal -->
+    <div class="modal" id="eventModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="modalTitle">Add Event</h2>
+                <button class="close-btn" id="closeModal">&times;</button>
+            </div>
+            
+            <form id="eventForm">
+                <input type="hidden" id="eventId">
+                
+                <div class="form-group">
+                    <label for="eventDescription">Description *</label>
+                    <input type="text" id="eventDescription" required placeholder="e.g., Salary, Rent, Groceries">
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventAmount">Amount * (negative for expenses)</label>
+                    <input type="number" id="eventAmount" step="0.01" required placeholder="0.00">
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventComment">Comment</label>
+                    <textarea id="eventComment" rows="2" placeholder="Optional notes..."></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="eventRecurring">
+                        Recurring Event
+                    </label>
+                </div>
+                
+                <!-- One-off fields -->
+                <div id="oneOffFields">
+                    <div class="form-group">
+                        <label for="eventDate">Date *</label>
+                        <input type="date" id="eventDate">
+                    </div>
+                </div>
+                
+                <!-- Recurring fields -->
+                <div id="recurringFields" style="display: none;">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recurrencePattern">Pattern *</label>
+                            <select id="recurrencePattern">
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly</option>
+                                <option value="biweekly">Bi-weekly</option>
+                                <option value="monthly">Monthly</option>
+                                <option value="quarterly">Quarterly</option>
+                                <option value="yearly">Yearly</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="recurrenceInterval">Every</label>
+                            <input type="number" id="recurrenceInterval" min="1" value="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="recurrenceStart">Start Date *</label>
+                            <input type="date" id="recurrenceStart">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="recurrenceEnd">End Date (optional)</label>
+                            <input type="date" id="recurrenceEnd">
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="eventLabels">Labels (comma-separated)</label>
+                    <input type="text" id="eventLabels" placeholder="e.g., income, fixed, essential">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Event</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

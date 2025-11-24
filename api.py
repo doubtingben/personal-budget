@@ -161,11 +161,45 @@ class BudgetAPI:
         rec_start = datetime.fromisoformat(event['recurrence_start'])
         rec_end = datetime.fromisoformat(event['recurrence_end']) if event['recurrence_end'] else end_date
 
-        current = max(rec_start, start_date)
+        # Start from the actual recurrence start date
+        current = rec_start
 
         pattern = event['recurrence_pattern']
         interval = event['recurrence_interval'] or 1
 
+        # If the recurrence start is before the start_date, fast-forward to the first
+        # occurrence that falls on or after start_date by iterating forward
+        while current < start_date and current <= rec_end:
+            # Calculate next occurrence
+            if pattern == 'daily':
+                current += timedelta(days=interval)
+            elif pattern == 'weekly':
+                current += timedelta(weeks=interval)
+            elif pattern == 'biweekly':
+                current += timedelta(weeks=2)
+            elif pattern == 'monthly':
+                # Add months
+                month = current.month + interval
+                year = current.year + (month - 1) // 12
+                month = ((month - 1) % 12) + 1
+                day = min(current.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+                current = datetime(year, month, day)
+            elif pattern == 'quarterly':
+                # Add 3 months
+                month = current.month + 3 * interval
+                year = current.year + (month - 1) // 12
+                month = ((month - 1) % 12) + 1
+                day = min(current.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+                current = datetime(year, month, day)
+            elif pattern == 'yearly':
+                year = current.year + interval
+                month = current.month
+                day = min(current.day, [31, 29 if year % 4 == 0 and (year % 100 != 0 or year % 400 == 0) else 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1])
+                current = datetime(year, month, day)
+            else:
+                break  # Unknown pattern
+
+        # Now iterate through occurrences within the date range
         while current <= min(rec_end, end_date):
             if current >= start_date:
                 occurrences.append({

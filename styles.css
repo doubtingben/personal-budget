@@ -34,8 +34,17 @@ body {
 }
 
 .container {
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 /* Header */
@@ -43,7 +52,7 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 2rem;
+    margin-bottom: 1.5rem;
     padding: 2rem;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
@@ -169,42 +178,57 @@ body {
     transform: translateY(-1px);
 }
 
+/* Main Layout - Two Column */
+.header {
+    margin-bottom: 1.5rem;
+}
+
+.main-content-wrapper {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
 /* Controls Panel */
 .controls-panel {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    display: flex;
+    flex-direction: column;
     gap: 1.5rem;
-    margin-bottom: 1.5rem;
-    padding: 2rem;
+    padding: 1.5rem;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
+    border-radius: 16px;
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px var(--shadow);
+    position: sticky;
+    top: 1.5rem;
+    max-height: calc(100vh - 2rem);
+    overflow-y: auto;
 }
 
 /* Timeline Range Controls */
 .timeline-controls {
-    margin-bottom: 2rem;
-    padding: 2rem;
+    margin-bottom: 1rem;
+    padding: 1rem 1.5rem;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
+    border-radius: 12px;
     backdrop-filter: blur(10px);
-    box-shadow: 0 8px 32px var(--shadow);
+    box-shadow: 0 4px 16px var(--shadow);
 }
 
 .timeline-wrapper {
     display: grid;
     grid-template-columns: 1fr auto 1fr;
-    gap: 2rem;
+    gap: 1rem;
     align-items: center;
 }
 
 .timeline-section {
     display: flex;
     flex-direction: column;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
 .timeline-section label {
@@ -218,13 +242,13 @@ body {
 .timeline-label {
     color: var(--text);
     font-weight: 600;
-    font-size: 1rem;
+    font-size: 0.875rem;
 }
 
 .timeline-value {
     color: var(--primary-light);
     font-weight: 700;
-    font-size: 0.875rem;
+    font-size: 0.75rem;
 }
 
 .timeline-section.past {
@@ -241,17 +265,17 @@ body {
 }
 
 .timeline-center {
-    padding: 0 1rem;
+    padding: 0 0.75rem;
 }
 
 .now-marker {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.5rem;
-    padding: 1rem 1.5rem;
+    gap: 0.25rem;
+    padding: 0.5rem 1rem;
     background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-    border-radius: 16px;
+    border-radius: 12px;
     box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
     position: relative;
 }
@@ -277,19 +301,19 @@ body {
 }
 
 .now-icon {
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1;
 }
 
 .now-text {
-    font-size: 0.875rem;
+    font-size: 0.75rem;
     font-weight: 700;
     letter-spacing: 0.1em;
     color: white;
 }
 
 .now-date {
-    font-size: 0.75rem;
+    font-size: 0.65rem;
     color: rgba(255, 255, 255, 0.8);
     font-weight: 500;
 }
@@ -298,6 +322,14 @@ body {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+}
+
+.controls-panel .control-group {
+    width: 100%;
+}
+
+.controls-panel .btn {
+    width: 100%;
 }
 
 .control-group label {
@@ -388,13 +420,15 @@ select[multiple] {
 /* Chart Container */
 .chart-container {
     margin-bottom: 2rem;
-    padding: 2rem;
+    padding: 1.5rem;
     background: var(--glass-bg);
     border: 1px solid var(--glass-border);
-    border-radius: 20px;
+    border-radius: 16px;
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px var(--shadow);
-    height: 400px;
+    height: 500px;
+    flex: 1;
+    min-height: 500px;
 }
 
 /* Events Section */
@@ -813,6 +847,17 @@ select[multiple] {
 }
 
 /* Responsive */
+@media (max-width: 1200px) {
+    .main-content-wrapper {
+        grid-template-columns: 1fr;
+    }
+
+    .controls-panel {
+        position: static;
+        max-height: none;
+    }
+}
+
 @media (max-width: 768px) {
     body {
         padding: 1rem;
@@ -828,8 +873,13 @@ select[multiple] {
         flex-direction: column;
     }
 
-    .controls-panel {
+    .main-content-wrapper {
         grid-template-columns: 1fr;
+    }
+
+    .controls-panel {
+        position: static;
+        max-height: none;
     }
 
     .timeline-wrapper {
@@ -852,6 +902,7 @@ select[multiple] {
 
     .chart-container {
         height: 300px;
+        min-height: 300px;
     }
 
     .events-grid {

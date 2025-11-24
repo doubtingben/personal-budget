@@ -40,57 +40,63 @@
             </div>
         </header>
 
-        <!-- Controls -->
-        <div class="controls-panel">
-            <div class="control-group">
-                <label for="startingBalance">Starting Balance</label>
-                <input type="number" id="startingBalance" value="1000" step="0.01">
-            </div>
+        <!-- Main Content Wrapper -->
+        <div class="main-content-wrapper">
+            <!-- Main Content Area -->
+            <div class="main-content">
+                <!-- Timeline Range Controls -->
+                <div class="timeline-controls">
+                    <div class="timeline-wrapper">
+                        <div class="timeline-section past">
+                            <label for="pastDays">
+                                <span class="timeline-label">← Past</span>
+                                <span class="timeline-value" id="pastDaysValue">0 days</span>
+                            </label>
+                            <input type="range" id="pastDays" min="0" max="365" value="0" class="slider slider-past">
+                        </div>
 
-            <div class="control-group">
-                <label for="labelFilter">Filter by Labels</label>
-                <select id="labelFilter" multiple>
-                    <option value="">All Labels</option>
-                    <option value="__unlabeled__">Unlabeled</option>
-                </select>
-                <a href="labels.html" class="label-manage-link">Manage Labels →</a>
-            </div>
+                        <div class="timeline-center">
+                            <div class="now-marker">
+                                <div class="now-icon">📍</div>
+                                <div class="now-text">NOW</div>
+                                <div class="now-date" id="nowDate">Nov 24, 2025</div>
+                            </div>
+                        </div>
 
-            <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>
-        </div>
-
-        <!-- Timeline Range Controls -->
-        <div class="timeline-controls">
-            <div class="timeline-wrapper">
-                <div class="timeline-section past">
-                    <label for="pastDays">
-                        <span class="timeline-label">← Past</span>
-                        <span class="timeline-value" id="pastDaysValue">30 days</span>
-                    </label>
-                    <input type="range" id="pastDays" min="0" max="365" value="30" class="slider slider-past">
-                </div>
-
-                <div class="timeline-center">
-                    <div class="now-marker">
-                        <div class="now-icon">📍</div>
-                        <div class="now-text">NOW</div>
-                        <div class="now-date" id="nowDate">Nov 24, 2025</div>
+                        <div class="timeline-section future">
+                            <label for="futureDays">
+                                <span class="timeline-label">Future →</span>
+                                <span class="timeline-value" id="futureDaysValue">60 days</span>
+                            </label>
+                            <input type="range" id="futureDays" min="0" max="365" value="60" class="slider slider-future">
+                        </div>
                     </div>
                 </div>
 
-                <div class="timeline-section future">
-                    <label for="futureDays">
-                        <span class="timeline-label">Future →</span>
-                        <span class="timeline-value" id="futureDaysValue">30 days</span>
-                    </label>
-                    <input type="range" id="futureDays" min="0" max="365" value="30" class="slider slider-future">
+                <!-- Chart -->
+                <div class="chart-container">
+                    <canvas id="balanceChart"></canvas>
                 </div>
             </div>
-        </div>
 
-        <!-- Chart -->
-        <div class="chart-container">
-            <canvas id="balanceChart"></canvas>
+            <!-- Controls Panel (Right Side) -->
+            <div class="controls-panel">
+                <div class="control-group">
+                    <label for="startingBalance">Starting Balance</label>
+                    <input type="number" id="startingBalance" value="1000" step="0.01">
+                </div>
+
+                <div class="control-group">
+                    <label for="labelFilter">Filter by Labels</label>
+                    <select id="labelFilter" multiple>
+                        <option value="">All Labels</option>
+                        <option value="__unlabeled__">Unlabeled</option>
+                    </select>
+                    <a href="labels.html" class="label-manage-link">Manage Labels →</a>
+                </div>
+
+                <button class="btn btn-secondary" id="refreshBtn">🔄 Refresh</button>
+            </div>
         </div>
 
         <!-- Events List -->

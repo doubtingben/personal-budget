@@ -6,8 +6,8 @@ class BudgetApp {
         this.chart = null;
         this.currentBalance = 0;
         this.startingBalance = 1000;
-        this.pastDays = 30;
-        this.futureDays = 30;
+        this.pastDays = 0;
+        this.futureDays = 60;
         this.currentDate = '2025-11-24';
         this.selectedLabels = [];
         this.editingEventId = null;

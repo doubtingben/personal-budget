@@ -652,6 +652,22 @@ select[multiple] {
     transition: all 0.3s ease;
 }
 
+.form-group input[type="date"] {
+    cursor: pointer;
+    position: relative;
+}
+
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    filter: invert(1);
+    opacity: 0.6;
+    transition: opacity 0.3s ease;
+}
+
+.form-group input[type="date"]:hover::-webkit-calendar-picker-indicator {
+    opacity: 1;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {

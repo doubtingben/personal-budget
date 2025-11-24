@@ -174,6 +174,17 @@ body {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 1.5rem;
+    margin-bottom: 1.5rem;
+    padding: 2rem;
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 8px 32px var(--shadow);
+}
+
+/* Timeline Range Controls */
+.timeline-controls {
     margin-bottom: 2rem;
     padding: 2rem;
     background: var(--glass-bg);
@@ -181,6 +192,106 @@ body {
     border-radius: 20px;
     backdrop-filter: blur(10px);
     box-shadow: 0 8px 32px var(--shadow);
+}
+
+.timeline-wrapper {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    gap: 2rem;
+    align-items: center;
+}
+
+.timeline-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.timeline-section label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.timeline-label {
+    color: var(--text);
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.timeline-value {
+    color: var(--primary-light);
+    font-weight: 700;
+    font-size: 0.875rem;
+}
+
+.timeline-section.past {
+    text-align: right;
+}
+
+.timeline-section.past .slider {
+    direction: rtl;
+    /* Reverse slider so 0 is on right (at NOW) */
+}
+
+.timeline-section.future {
+    text-align: left;
+}
+
+.timeline-center {
+    padding: 0 1rem;
+}
+
+.now-marker {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(139, 92, 246, 0.5);
+    position: relative;
+}
+
+.now-marker::before,
+.now-marker::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 20px;
+    height: 2px;
+    background: var(--primary);
+}
+
+.now-marker::before {
+    right: 100%;
+    margin-right: 0.5rem;
+}
+
+.now-marker::after {
+    left: 100%;
+    margin-left: 0.5rem;
+}
+
+.now-icon {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.now-text {
+    font-size: 0.875rem;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    color: white;
+}
+
+.now-date {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 500;
 }
 
 .control-group {
@@ -690,6 +801,24 @@ select[multiple] {
 
     .controls-panel {
         grid-template-columns: 1fr;
+    }
+
+    .timeline-wrapper {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .timeline-section.past {
+        text-align: left;
+    }
+
+    .timeline-section.past .slider {
+        direction: ltr;
+    }
+
+    .now-marker::before,
+    .now-marker::after {
+        display: none;
     }
 
     .chart-container {

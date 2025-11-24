@@ -60,6 +60,14 @@ class BudgetApp {
     }
 
     setupEventListeners() {
+        // Set NOW date display
+        const nowDate = new Date(this.currentDate);
+        document.getElementById('nowDate').textContent = nowDate.toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+        });
+
         // Starting balance
         document.getElementById('startingBalance').addEventListener('change', async (e) => {
             this.startingBalance = parseFloat(e.target.value);
@@ -70,7 +78,7 @@ class BudgetApp {
         // Time range sliders
         document.getElementById('pastDays').addEventListener('input', (e) => {
             this.pastDays = parseInt(e.target.value);
-            document.getElementById('pastDaysValue').textContent = this.pastDays;
+            document.getElementById('pastDaysValue').textContent = this.pastDays + ' days';
         });
 
         document.getElementById('pastDays').addEventListener('change', async () => {
@@ -79,7 +87,7 @@ class BudgetApp {
 
         document.getElementById('futureDays').addEventListener('input', (e) => {
             this.futureDays = parseInt(e.target.value);
-            document.getElementById('futureDaysValue').textContent = this.futureDays;
+            document.getElementById('futureDaysValue').textContent = this.futureDays + ' days';
         });
 
         document.getElementById('futureDays').addEventListener('change', async () => {

@@ -256,6 +256,27 @@ class BudgetApp {
                                 yMax: 0,
                                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
                                 borderWidth: 0
+                            },
+                            nowLine: {
+                                type: 'line',
+                                xMin: 0,
+                                xMax: 0,
+                                borderColor: '#8b5cf6',
+                                borderWidth: 3,
+                                borderDash: [5, 5],
+                                label: {
+                                    display: true,
+                                    content: '📍 NOW',
+                                    position: 'start',
+                                    backgroundColor: 'rgba(139, 92, 246, 0.9)',
+                                    color: '#fff',
+                                    font: {
+                                        size: 12,
+                                        weight: 'bold'
+                                    },
+                                    padding: 6,
+                                    borderRadius: 4
+                                }
                             }
                         }
                     }
@@ -326,6 +347,9 @@ class BudgetApp {
             const balances = data.timeline.map(point => point.balance);
             const zeroLine = data.timeline.map(() => 0); // Zero threshold line
 
+            // Find the index of the current date for the NOW line
+            const currentDateIndex = data.timeline.findIndex(p => p.date === this.currentDate);
+
             // Create event markers dataset
             const eventMarkers = this.createEventMarkers(data.timeline, data.events);
 
@@ -364,6 +388,34 @@ class BudgetApp {
                 });
             }
 
+            // Update NOW line annotation
+            if (currentDateIndex >= 0) {
+                // Update the vertical line annotation for NOW
+                if (this.chart.options.plugins.annotation) {
+                    this.chart.options.plugins.annotation.annotations.nowLine = {
+                        type: 'line',
+                        xMin: currentDateIndex,
+                        xMax: currentDateIndex,
+                        borderColor: '#8b5cf6',
+                        borderWidth: 3,
+                        borderDash: [5, 5],
+                        label: {
+                            display: true,
+                            content: '📍 NOW',
+                            position: 'start',
+                            backgroundColor: 'rgba(139, 92, 246, 0.9)',
+                            color: '#fff',
+                            font: {
+                                size: 12,
+                                weight: 'bold'
+                            },
+                            padding: 6,
+                            borderRadius: 4
+                        }
+                    };
+                }
+            }
+
             // Check if balance ever goes to zero or negative
             const hasZeroOrNegative = balances.some(b => b <= 0);
             const minBalance = Math.min(...balances);
@@ -374,7 +426,6 @@ class BudgetApp {
             this.chart.update();
 
             // Update current balance (balance at current date)
-            const currentDateIndex = data.timeline.findIndex(p => p.date === this.currentDate);
             if (currentDateIndex >= 0) {
                 this.currentBalance = data.timeline[currentDateIndex].balance;
             } else {

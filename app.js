@@ -207,8 +207,9 @@ class BudgetApp {
                         }
                     },
                     tooltip: {
-                        mode: 'index',
+                        mode: 'point',
                         intersect: false,
+                        axis: 'xy',
                         backgroundColor: 'rgba(30, 41, 59, 0.95)',
                         titleColor: '#f1f5f9',
                         bodyColor: '#cbd5e1',
@@ -244,7 +245,14 @@ class BudgetApp {
                             },
                             title: function (context) {
                                 // Show date in title
-                                return context[0].label;
+                                if (context[0] && context[0].label) {
+                                    return context[0].label;
+                                }
+                                // For event markers, extract from the data
+                                if (context[0] && context[0].raw && context[0].raw.x) {
+                                    return context[0].raw.x;
+                                }
+                                return '';
                             }
                         }
                     },

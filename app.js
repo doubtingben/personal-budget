@@ -194,24 +194,55 @@ class BudgetApp {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        display: false
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            color: '#cbd5e1',
+                            usePointStyle: true,
+                            padding: 15,
+                            filter: function (legendItem, chartData) {
+                                // Only show Balance, Income Events, and Expense Events in legend
+                                return legendItem.text !== 'Zero Line';
+                            }
+                        }
                     },
                     tooltip: {
                         mode: 'index',
                         intersect: false,
-                        backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                        backgroundColor: 'rgba(30, 41, 59, 0.95)',
                         titleColor: '#f1f5f9',
                         bodyColor: '#cbd5e1',
                         borderColor: '#475569',
                         borderWidth: 1,
                         padding: 12,
-                        displayColors: false,
+                        displayColors: true,
                         callbacks: {
                             label: function (context) {
                                 if (context.datasetIndex === 1) return null; // Hide zero line tooltip
-                                const value = context.parsed.y;
-                                const color = value < 0 ? '⚠️ NEGATIVE: $' : value === 0 ? '⚠️ ZERO: $' : 'Balance: $';
-                                return color + value.toFixed(2);
+
+                                // Balance line
+                                if (context.datasetIndex === 0) {
+                                    const value = context.parsed.y;
+                                    const color = value < 0 ? '⚠️ NEGATIVE: $' : value === 0 ? '⚠️ ZERO: $' : 'Balance: $';
+                                    return color + value.toFixed(2);
+                                }
+
+                                // Event markers
+                                if (context.datasetIndex === 2 || context.datasetIndex === 3) {
+                                    const dataPoint = context.raw;
+                                    if (dataPoint && dataPoint.events) {
+                                        return dataPoint.events.map(e => {
+                                            const amount = e.amount >= 0 ? `+$${e.amount.toFixed(2)}` : `-$${Math.abs(e.amount).toFixed(2)}`;
+                                            return `${e.description}: ${amount}`;
+                                        });
+                                    }
+                                }
+
+                                return null;
+                            },
+                            title: function (context) {
+                                // Show date in title
+                                return context[0].label;
                             }
                         }
                     },
@@ -293,9 +324,47 @@ class BudgetApp {
             const balances = data.timeline.map(point => point.balance);
             const zeroLine = data.timeline.map(() => 0); // Zero threshold line
 
+            // Create event markers dataset
+            const eventMarkers = this.createEventMarkers(data.timeline, data.events);
+
             this.chart.data.labels = labels_arr;
             this.chart.data.datasets[0].data = balances;
             this.chart.data.datasets[1].data = zeroLine; // Update zero line
+
+            // Add income and expense event markers
+            if (this.chart.data.datasets.length > 2) {
+                this.chart.data.datasets[2].data = eventMarkers.income.map(m => ({ x: m.x, y: m.y }));
+                this.chart.data.datasets[2].tooltip = eventMarkers.income.map(m => m.tooltip);
+                this.chart.data.datasets[3].data = eventMarkers.expenses.map(m => ({ x: m.x, y: m.y }));
+                this.chart.data.datasets[3].tooltip = eventMarkers.expenses.map(m => m.tooltip);
+            } else {
+                this.chart.data.datasets.push({
+                    label: 'Income Events',
+                    data: eventMarkers.income.map(m => ({ x: m.x, y: m.y })),
+                    backgroundColor: '#10b981',
+                    borderColor: '#10b981',
+                    borderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointStyle: 'circle',
+                    showLine: false,
+                    order: 1,
+                    tooltip: eventMarkers.income.map(m => m.tooltip)
+                });
+                this.chart.data.datasets.push({
+                    label: 'Expense Events',
+                    data: eventMarkers.expenses.map(m => ({ x: m.x, y: m.y })),
+                    backgroundColor: '#ef4444',
+                    borderColor: '#ef4444',
+                    borderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    pointStyle: 'circle',
+                    showLine: false,
+                    order: 1,
+                    tooltip: eventMarkers.expenses.map(m => m.tooltip)
+                });
+            }
 
             // Check if balance ever goes to zero or negative
             const hasZeroOrNegative = balances.some(b => b <= 0);
@@ -338,6 +407,71 @@ class BudgetApp {
         } catch (error) {
             console.error('Error updating timeline:', error);
         }
+    }
+
+    createEventMarkers(timeline, events) {
+        // Create arrays for income and expense events with their balance positions
+        const income = [];
+        const expenses = [];
+
+        // Create a map of dates to balance for quick lookup
+        const dateBalanceMap = {};
+        timeline.forEach((point, index) => {
+            dateBalanceMap[point.date] = {
+                balance: point.balance,
+                index: index
+            };
+        });
+
+        // Group events by date to create marker data
+        const eventsByDate = {};
+        events.forEach(event => {
+            if (!eventsByDate[event.date]) {
+                eventsByDate[event.date] = [];
+            }
+            eventsByDate[event.date].push(event);
+        });
+
+        // For each date with events, add markers
+        Object.keys(eventsByDate).forEach(date => {
+            const balanceInfo = dateBalanceMap[date];
+            if (balanceInfo) {
+                const dateEvents = eventsByDate[date];
+                const incomeEvents = dateEvents.filter(e => e.amount > 0);
+                const expenseEvents = dateEvents.filter(e => e.amount < 0);
+
+                // Create tooltip text
+                const incomeTooltip = incomeEvents.map(e =>
+                    `${e.description}: +$${e.amount.toFixed(2)}`
+                ).join('\n');
+
+                const expenseTooltip = expenseEvents.map(e =>
+                    `${e.description}: -$${Math.abs(e.amount).toFixed(2)}`
+                ).join('\n');
+
+                // Add income marker
+                if (incomeEvents.length > 0) {
+                    income.push({
+                        x: balanceInfo.index,
+                        y: balanceInfo.balance,
+                        tooltip: incomeTooltip,
+                        events: incomeEvents
+                    });
+                }
+
+                // Add expense marker
+                if (expenseEvents.length > 0) {
+                    expenses.push({
+                        x: balanceInfo.index,
+                        y: balanceInfo.balance,
+                        tooltip: expenseTooltip,
+                        events: expenseEvents
+                    });
+                }
+            }
+        });
+
+        return { income, expenses };
     }
 
     updateDangerWarning(hasZeroOrNegative, minBalance, timeline) {

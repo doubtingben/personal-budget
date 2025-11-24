@@ -269,22 +269,30 @@ class BudgetApp {
                                 type: 'line',
                                 xMin: 0,
                                 xMax: 0,
-                                borderColor: '#8b5cf6',
-                                borderWidth: 3,
-                                borderDash: [5, 5],
+                                borderColor: '#a78bfa',
+                                borderWidth: 4,
+                                borderDash: [],
                                 label: {
                                     display: true,
                                     content: '📍 NOW',
                                     position: 'start',
-                                    backgroundColor: 'rgba(139, 92, 246, 0.9)',
+                                    backgroundColor: 'rgba(167, 139, 250, 1)',
                                     color: '#fff',
                                     font: {
-                                        size: 12,
+                                        size: 14,
                                         weight: 'bold'
                                     },
-                                    padding: 6,
-                                    borderRadius: 4
+                                    padding: 8,
+                                    borderRadius: 6
                                 }
+                            },
+                            pastShading: {
+                                type: 'box',
+                                xMin: -0.5,
+                                xMax: 0,
+                                backgroundColor: 'rgba(30, 41, 59, 0.3)',
+                                borderWidth: 0,
+                                drawTime: 'beforeDraw'
                             }
                         }
                     }
@@ -404,22 +412,32 @@ class BudgetApp {
                         type: 'line',
                         xMin: currentDateIndex,
                         xMax: currentDateIndex,
-                        borderColor: '#8b5cf6',
-                        borderWidth: 3,
-                        borderDash: [5, 5],
+                        borderColor: '#a78bfa',
+                        borderWidth: 4,
+                        borderDash: [],
                         label: {
                             display: true,
                             content: '📍 NOW',
                             position: 'start',
-                            backgroundColor: 'rgba(139, 92, 246, 0.9)',
+                            backgroundColor: 'rgba(167, 139, 250, 1)',
                             color: '#fff',
                             font: {
-                                size: 12,
+                                size: 14,
                                 weight: 'bold'
                             },
-                            padding: 6,
-                            borderRadius: 4
+                            padding: 8,
+                            borderRadius: 6
                         }
+                    };
+
+                    // Add subtle shading for the past
+                    this.chart.options.plugins.annotation.annotations.pastShading = {
+                        type: 'box',
+                        xMin: -0.5,
+                        xMax: currentDateIndex,
+                        backgroundColor: 'rgba(30, 41, 59, 0.3)',
+                        borderWidth: 0,
+                        drawTime: 'beforeDraw'
                     };
                 }
             }

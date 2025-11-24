@@ -405,9 +405,9 @@ class BudgetApp {
             }
 
             // Update NOW line annotation
-            if (currentDateIndex >= 0) {
-                // Update the vertical line annotation for NOW
-                if (this.chart.options.plugins.annotation) {
+            if (this.chart.options.plugins.annotation) {
+                if (currentDateIndex >= 0) {
+                    // Update the vertical line annotation for NOW
                     this.chart.options.plugins.annotation.annotations.nowLine = {
                         type: 'line',
                         xMin: currentDateIndex,
@@ -439,6 +439,14 @@ class BudgetApp {
                         borderWidth: 0,
                         drawTime: 'beforeDraw'
                     };
+                } else {
+                    // Hide the annotations if current date is not in the visible range
+                    if (this.chart.options.plugins.annotation.annotations.nowLine) {
+                        this.chart.options.plugins.annotation.annotations.nowLine.display = false;
+                    }
+                    if (this.chart.options.plugins.annotation.annotations.pastShading) {
+                        this.chart.options.plugins.annotation.annotations.pastShading.display = false;
+                    }
                 }
             }
 
@@ -568,7 +576,7 @@ class BudgetApp {
                     <span class="warning-icon">⚠️</span>
                     <div class="warning-text">
                         <strong>DANGER: Balance Hits Zero!</strong>
-                        <p>Your balance reaches $${minBalance.toFixed(2)} on ${new Date(firstDangerDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}. 
+                        <p>Your balance reaches $${minBalance.toFixed(2)} on ${new Date(firstDangerDate).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}.
                         ${minBalance < 0 ? 'You will be overdrawn!' : 'Critical low balance!'}</p>
                     </div>
                 </div>

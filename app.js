@@ -433,12 +433,8 @@ class BudgetApp {
 
             this.chart.update();
 
-            // Update current balance (balance at current date)
-            if (currentDateIndex >= 0) {
-                this.currentBalance = data.timeline[currentDateIndex].balance;
-            } else {
-                this.currentBalance = data.ending_balance;
-            }
+            // Update ending balance (balance at end of timeline)
+            this.currentBalance = data.ending_balance;
 
             // Update balance display with danger styling
             const balanceElement = document.getElementById('currentBalance');

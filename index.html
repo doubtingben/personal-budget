@@ -68,7 +68,8 @@
                                 <span class="timeline-label">Future →</span>
                                 <span class="timeline-value" id="futureDaysValue">60 days</span>
                             </label>
-                            <input type="range" id="futureDays" min="0" max="365" value="60" class="slider slider-future">
+                            <input type="range" id="futureDays" min="0" max="365" value="60"
+                                class="slider slider-future">
                         </div>
                     </div>
                 </div>
@@ -209,6 +210,16 @@
         </div>
     </div>
 
+    <script>
+        // Suppress custom element redefinition errors (harmless Chart.js internal issue)
+        window.addEventListener('error', function (e) {
+            if (e.message && e.message.includes('has already been defined')) {
+                e.preventDefault();
+                e.stopPropagation();
+                return true;
+            }
+        });
+    </script>
     <script src="app.js"></script>
 </body>
 

@@ -8,6 +8,7 @@ import http.server
 import socketserver
 import json
 import urllib.parse
+from datetime import date
 from api import BudgetAPI
 
 PORT = 8000
@@ -85,7 +86,7 @@ class BudgetHandler(http.server.SimpleHTTPRequestHandler):
         """Get all settings"""
         settings = {
             'starting_balance': float(api.get_setting('starting_balance', '1000.00')),
-            'current_date': api.get_setting('current_date', '2025-11-24')
+            'current_date': api.get_setting('current_date', date.today().strftime('%Y-%m-%d'))
         }
         self.send_json_response(settings)
 

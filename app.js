@@ -8,7 +8,7 @@ class BudgetApp {
         this.startingBalance = 1000;
         this.pastDays = 0;
         this.futureDays = 60;
-        this.currentDate = '2025-11-24';
+        this.currentDate = new Date().toISOString().split('T')[0]; // Use today's date
         this.selectedLabels = [];
         this.editingEventId = null;
 
@@ -39,6 +39,9 @@ class BudgetApp {
             this.currentDate = settings.current_date;
 
             document.getElementById('startingBalance').value = this.startingBalance;
+
+            // Update NOW date display after loading current_date from API
+            this.updateNowDateDisplay();
         } catch (error) {
             console.error('Error loading settings:', error);
         }
@@ -59,14 +62,18 @@ class BudgetApp {
         }
     }
 
-    setupEventListeners() {
-        // Set NOW date display
-        const nowDate = new Date(this.currentDate);
+    updateNowDateDisplay() {
+        // Update NOW date display (parse date components to avoid timezone issues)
+        const [year, month, day] = this.currentDate.split('-').map(Number);
+        const nowDate = new Date(year, month - 1, day); // month is 0-indexed
         document.getElementById('nowDate').textContent = nowDate.toLocaleDateString('en-US', {
             month: 'short',
             day: 'numeric',
             year: 'numeric'
         });
+    }
+
+    setupEventListeners() {
 
         // Starting balance
         document.getElementById('startingBalance').addEventListener('change', async (e) => {

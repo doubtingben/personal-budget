@@ -8,10 +8,11 @@ import http.server
 import socketserver
 import json
 import urllib.parse
+import os
 from datetime import date
 from api import BudgetAPI
 
-PORT = 8000
+PORT = int(os.environ.get('PORT', 8000))
 api = BudgetAPI()
 
 
@@ -201,9 +202,9 @@ class BudgetHandler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    with socketserver.TCPServer(("", PORT), BudgetHandler) as httpd:
-        print(f"🚀 Budget Visualization Server running at http://localhost:{PORT}")
-        print(f"📊 Open http://localhost:{PORT} in your browser")
+    with socketserver.TCPServer(("0.0.0.0", PORT), BudgetHandler) as httpd:
+        print(f"🚀 Budget Visualization Server running on port {PORT}")
+        print(f"📊 Server is ready to accept connections")
         print("Press Ctrl+C to stop the server")
         try:
             httpd.serve_forever()

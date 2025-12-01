@@ -202,8 +202,15 @@ class BudgetHandler(http.server.SimpleHTTPRequestHandler):
 
 
 if __name__ == '__main__':
-    with socketserver.TCPServer(("0.0.0.0", PORT), BudgetHandler) as httpd:
-        print(f"🚀 Budget Visualization Server running on port {PORT}")
+    HOST = "0.0.0.0"
+    with socketserver.TCPServer((HOST, PORT), BudgetHandler) as httpd:
+        actual_host, actual_port = httpd.server_address
+        print(f"🚀 Budget Visualization Server")
+        print(f"📍 Listening on: {actual_host}:{actual_port}")
+        if actual_host == "0.0.0.0":
+            print(f"   → Available on all network interfaces")
+            print(f"   → Local: http://localhost:{actual_port}")
+            print(f"   → Network: http://<your-ip>:{actual_port}")
         print(f"📊 Server is ready to accept connections")
         print("Press Ctrl+C to stop the server")
         try:

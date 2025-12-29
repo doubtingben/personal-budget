@@ -1,37 +1,41 @@
 # 💰 Budget Visualization
 
-An interactive budget visualization tool that displays account balance changes over an adjustable timeline. Track your financial journey with beautiful charts, recurring events, and label-based filtering.
+An interactive budget visualization tool that displays account balance changes over an adjustable timeline. Track your financial journey with beautiful charts, recurring events, and **cloud sync with authentication** or use it locally without an account.
 
 ![Budget Visualization](https://img.shields.io/badge/Status-Active-success)
-![Python](https://img.shields.io/badge/Python-3.7+-blue)
+![Platform](https://img.shields.io/badge/Platform-Web-blue)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ## ✨ Features
 
+### Core Functionality
 - **📊 Interactive Timeline Chart**: Visualize your balance over time with smooth, animated charts
 - **🔄 Recurring Events**: Support for daily, weekly, bi-weekly, monthly, quarterly, and yearly recurring transactions
 - **📅 One-off Events**: Track one-time income and expenses
 - **🏷️ Label Filtering**: Organize and filter events by custom labels (e.g., income, fixed, essential)
 - **⏱️ Adjustable Time Range**: Dynamically adjust past and future date ranges to see balance projections
-- **💾 SQLite Database**: All data stored locally in a lightweight database
+
+### Authentication & Cloud Sync
+- **☁️ Firebase Integration**: Optionally sync your data to the cloud
+- **🔐 OAuth Login**: Sign in with Google or GitHub
+- **💾 LocalStorage Fallback**: Works without login using browser storage
+- **🔄 Data Migration**: Seamlessly migrate local data to cloud when you sign up
+- **📱 Multi-Device Sync**: Access your budget from any device when authenticated
+
+### Design & UX
 - **🎨 Premium UI**: Modern dark mode design with glassmorphism and smooth animations
 - **📱 Responsive**: Works beautifully on desktop and mobile devices
 
 ## 🚀 Quick Start
 
-### Prerequisites
-
-- Python 3.7 or higher (no external packages required!)
-- A modern web browser (Chrome, Firefox, Safari, or Edge)
-
-### Installation
+### Option 1: Try It Out Locally (No Account Required)
 
 1. Clone or navigate to this repository:
    ```bash
    cd /Users/bwilson/repos/personal-budget
    ```
 
-2. Start the server:
+2. Start the development server:
    ```bash
    python server.py
    ```
@@ -41,7 +45,32 @@ An interactive budget visualization tool that displays account balance changes o
    http://localhost:8000
    ```
 
-That's it! The database will be created automatically on first run.
+   The app will use **LocalStorage** to save your data in your browser. No account needed!
+
+### Option 2: Use with Cloud Sync (Firebase)
+
+1. **Set up Firebase** (first time only):
+   - See detailed instructions in `FIREBASE_SETUP.md`
+   - Create a Firebase project
+   - Enable Google and/or GitHub authentication
+   - Get your Firebase config
+   - Update `firebase-config.js` with your credentials
+
+2. **Run the app**:
+   ```bash
+   python server.py
+   ```
+   
+3. **Sign in**:
+   - Click the "Login" button
+   - Choose Google or GitHub
+   - Your data will sync to Firebase Firestore
+   - Access from any device with the same account
+   
+4. **Migrate existing data** (optional):
+   - If you have local data, the app will prompt you to migrate it to the cloud after login
+
+> **Note**: The Python server is optional for deployed apps. You can host the static files (HTML, CSS, JS) anywhere and they'll work with Firebase.
 
 ## 📖 Usage Guide
 
@@ -162,16 +191,41 @@ Get balance timeline data
 
 ```
 personal-budget/
-├── schema.sql          # Database schema
-├── api.py             # Backend API logic
-├── server.py          # HTTP server
-├── index.html         # Main HTML page
-├── styles.css         # Styling
-├── app.js            # Frontend JavaScript
-├── README.md          # This file
-├── .gitignore        # Git ignore rules
-└── requirements.txt   # Python dependencies (none!)
+├── index.html              # Main HTML page
+├── styles.css              # Styling
+├── app.js                  # Frontend JavaScript (main app logic)
+├── storage.js              # Storage backend abstraction
+├── firebase-config.js      # Firebase configuration (template)
+├── FIREBASE_SETUP.md       # Firebase setup guide
+├── firestore.rules         # Firestore security rules
+├── README.md               # This file
+├── .gitignore              # Git ignore rules
+│
+├── server.py               # Optional Python server (for local dev)
+├── api.py                  # Optional backend API (for local dev)
+├── schema.sql              # Optional database schema (for local dev)
+└── requirements.txt        # Python dependencies (none!)
 ```
+
+## 📦 Data Storage
+
+The app supports two storage backends:
+
+### LocalStorage Backend (Default)
+- No authentication required
+- Data stored in browser's LocalStorage
+- Works offline
+- Data stays on your device
+- Perfect for trying out the app
+
+### Firebase Backend (Optional)
+- Requires authentication (Google or GitHub)
+- Data stored in Firebase Firestore
+- Syncs across devices
+- Accessible from anywhere
+- Free tier available
+
+You can seamlessly switch between backends by logging in or out.
 
 ## 🎨 Design Philosophy
 

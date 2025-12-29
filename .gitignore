@@ -43,3 +43,9 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Firebase (if you decide to use the actual config instead of template)
+# Uncomment these if you replace placeholder values in firebase-config.js
+# firebase-config.js
+.env
+.env.local

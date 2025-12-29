@@ -12,10 +12,20 @@ class BudgetApp {
         this.selectedLabels = [];
         this.editingEventId = null;
 
+        // Storage backend (will be set during initialization)
+        this.storage = null;
+        this.user = null;
+
         this.init();
     }
 
     async init() {
+        // Initialize storage backend (LocalStorage or Firebase)
+        await this.initializeStorage();
+
+        // Set up authentication UI
+        this.setupAuthUI();
+
         // Load settings
         await this.loadSettings();
 
@@ -31,10 +41,222 @@ class BudgetApp {
         await this.updateTimeline();
     }
 
+    async initializeStorage() {
+        // Try to initialize Firebase first
+        const firebaseReady = initializeFirebase();
+
+        if (firebaseReady) {
+            const fb = getFirebase();
+            // Create Firebase backend
+            const firebaseBackend = new FirebaseBackend(fb.app, fb.auth, fb.db);
+
+            // Check if user is authenticated
+            return new Promise((resolve) => {
+                fb.auth.onAuthStateChanged(async (user) => {
+                    if (user) {
+                        // User is signed in, use Firebase backend
+                        this.storage = firebaseBackend;
+                        this.user = user;
+                        console.log('✅ Using Firebase backend (authenticated)');
+                        this.updateBackendIndicator(true);
+                        this.updateAuthUI(user);
+
+                        // Check if we should migrate local data
+                        await this.checkForLocalDataMigration();
+                    } else {
+                        // User is not signed in, use LocalStorage
+                        this.storage = new LocalStorageBackend();
+                        this.user = null;
+                        console.log('📦 Using LocalStorage backend (unauthenticated)');
+                        this.updateBackendIndicator(false);
+                        this.updateAuthUI(null);
+                    }
+                    resolve();
+                });
+            });
+        } else {
+            // Firebase not available, use LocalStorage only
+            this.storage = new LocalStorageBackend();
+            console.log('📦 Using LocalStorage backend (Firebase not configured)');
+            this.updateBackendIndicator(false);
+            this.updateAuthUI(null);
+        }
+    }
+
+    updateBackendIndicator(isAuthenticated) {
+        const badge = document.getElementById('backendBadge');
+        if (isAuthenticated) {
+            badge.textContent = '☁️ Cloud';
+            badge.classList.add('cloud');
+        } else {
+            badge.textContent = '💾 Local';
+            badge.classList.remove('cloud');
+        }
+    }
+
+    updateAuthUI(user) {
+        const loginBtn = document.getElementById('loginBtn');
+        const userInfo = document.getElementById('userInfo');
+
+        if (user) {
+            // Show user info, hide login button
+            loginBtn.style.display = 'none';
+            userInfo.style.display = 'flex';
+
+            // Update user details
+            document.getElementById('userAvatar').src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || user.email)}&background=8b5cf6&color=fff`;
+            document.getElementById('userName').textContent = user.displayName || user.email;
+        } else {
+            // Show login button, hide user info
+            loginBtn.style.display = 'block';
+            userInfo.style.display = 'none';
+        }
+    }
+
+    setupAuthUI() {
+        // Login button
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            document.getElementById('loginModal').classList.add('active');
+        });
+
+        // Close login modal
+        document.getElementById('closeLoginModal').addEventListener('click', () => {
+            document.getElementById('loginModal').classList.remove('active');
+        });
+
+        // Google login
+        document.getElementById('googleLoginBtn').addEventListener('click', async () => {
+            await this.handleGoogleLogin();
+        });
+
+        // GitHub login
+        document.getElementById('githubLoginBtn').addEventListener('click', async () => {
+            await this.handleGithubLogin();
+        });
+
+        // Logout button
+        document.getElementById('logoutBtn').addEventListener('click', async () => {
+            await this.handleLogout();
+        });
+
+        // Migration modal buttons
+        document.getElementById('skipMigrationBtn').addEventListener('click', () => {
+            document.getElementById('migrationModal').classList.remove('active');
+        });
+
+        document.getElementById('confirmMigrationBtn').addEventListener('click', async () => {
+            await this.performMigration();
+        });
+    }
+
+    async handleGoogleLogin() {
+        try {
+            const fb = getFirebase();
+            if (!fb) {
+                alert('Firebase is not configured. Please see FIREBASE_SETUP.md');
+                return;
+            }
+
+            await this.storage.signInWithGoogle();
+            document.getElementById('loginModal').classList.remove('active');
+
+            // Reinitialize storage with new auth state
+            await this.initializeStorage();
+            await this.loadSettings();
+            await this.loadLabels();
+            await this.loadEvents();
+            await this.updateTimeline();
+        } catch (error) {
+            console.error('Google login error:', error);
+            alert('Login failed: ' + error.message);
+        }
+    }
+
+    async handleGithubLogin() {
+        try {
+            const fb = getFirebase();
+            if (!fb) {
+                alert('Firebase is not configured. Please see FIREBASE_SETUP.md');
+                return;
+            }
+
+            await this.storage.signInWithGithub();
+            document.getElementById('loginModal').classList.remove('active');
+
+            // Reinitialize storage with new auth state
+            await this.initializeStorage();
+            await this.loadSettings();
+            await this.loadLabels();
+            await this.loadEvents();
+            await this.updateTimeline();
+        } catch (error) {
+            console.error('GitHub login error:', error);
+            alert('Login failed: ' + error.message);
+        }
+    }
+
+    async handleLogout() {
+        try {
+            if (this.storage instanceof FirebaseBackend) {
+                await this.storage.signOut();
+            }
+
+            // Reinitialize with LocalStorage
+            await this.initializeStorage();
+            await this.loadSettings();
+            await this.loadLabels();
+            await this.loadEvents();
+            await this.updateTimeline();
+        } catch (error) {
+            console.error('Logout error:', error);
+        }
+    }
+
+    async checkForLocalDataMigration() {
+        // Check if there's data in LocalStorage that could be migrated
+        const localBackend = new LocalStorageBackend();
+        const localEvents = await localBackend.getAllEvents();
+
+        if (localEvents.length > 0) {
+            // Show migration prompt
+            const stats = document.getElementById('migrationStats');
+            stats.innerHTML = `
+                <strong>${localEvents.length}</strong> events found in local storage
+            `;
+            document.getElementById('migrationModal').classList.add('active');
+        }
+    }
+
+    async performMigration() {
+        try {
+            const localBackend = new LocalStorageBackend();
+            const data = await localBackend.exportData();
+
+            // Import to Firebase
+            if (this.storage instanceof FirebaseBackend) {
+                await this.storage.importData(data);
+
+                // Clear local data after successful migration
+                await localBackend.clearData();
+
+                alert('Data migrated successfully!');
+                document.getElementById('migrationModal').classList.remove('active');
+
+                // Reload data
+                await this.loadSettings();
+                await this.loadLabels();
+                await this.loadEvents();
+                await this.updateTimeline();
+            }
+        } catch (error) {
+            console.error('Migration error:', error);
+            alert('Migration failed: ' + error.message);
+        }
+    }
+
     async loadSettings() {
         try {
-            const response = await fetch('/api/settings');
-            const settings = await response.json();
+            const settings = await this.storage.getSettings();
             this.startingBalance = parseFloat(settings.starting_balance);
             this.currentDate = settings.current_date;
 
@@ -49,13 +271,9 @@ class BudgetApp {
 
     async saveSettings() {
         try {
-            await fetch('/api/settings', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    starting_balance: this.startingBalance,
-                    current_date: this.currentDate
-                })
+            await this.storage.setSettings({
+                starting_balance: this.startingBalance,
+                current_date: this.currentDate
             });
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -354,13 +572,14 @@ class BudgetApp {
         const startDate = this.addDays(this.currentDate, -this.pastDays);
         const endDate = this.addDays(this.currentDate, this.futureDays);
 
-        // Don't pass labels to API - we want all events for balance calculation
         // Labels will only filter event marker visibility
+        // We need to calculate the timeline ourselves now
         try {
-            const response = await fetch(
-                `/api/timeline?start_date=${startDate}&end_date=${endDate}&starting_balance=${this.startingBalance}`
-            );
-            const data = await response.json();
+            // Get all events from storage
+            const allEvents = await this.storage.getAllEvents();
+
+            // Calculate timeline data locally
+            const data = this.calculateLocalTimeline(allEvents, startDate, endDate, this.startingBalance);
 
             // Update chart
             const labels_arr = data.timeline.map(point => {
@@ -632,8 +851,7 @@ class BudgetApp {
 
     async loadLabels() {
         try {
-            const response = await fetch('/api/labels');
-            const data = await response.json();
+            const labels = await this.storage.getAllLabels();
 
             const select = document.getElementById('labelFilter');
             select.innerHTML = '<option value="">All Labels</option>';
@@ -644,7 +862,7 @@ class BudgetApp {
             unlabeledOption.textContent = 'Unlabeled';
             select.appendChild(unlabeledOption);
 
-            data.labels.forEach(label => {
+            labels.forEach(label => {
                 const option = document.createElement('option');
                 option.value = label;
                 option.textContent = label;
@@ -657,12 +875,11 @@ class BudgetApp {
 
     async loadEvents() {
         try {
-            const response = await fetch('/api/events');
-            const data = await response.json();
+            const events = await this.storage.getAllEvents();
 
-            document.getElementById('totalEvents').textContent = data.events.length;
+            document.getElementById('totalEvents').textContent = events.length;
 
-            this.renderEvents(data.events);
+            this.renderEvents(events);
         } catch (error) {
             console.error('Error loading events:', error);
         }
@@ -778,7 +995,7 @@ class BudgetApp {
             description: document.getElementById('eventDescription').value,
             amount: parseFloat(document.getElementById('eventAmount').value),
             comment: document.getElementById('eventComment').value,
-            is_recurring: isRecurring,
+            is_recurring: isRecurring ? 1 : 0,
             labels: labels
         };
 
@@ -820,9 +1037,7 @@ class BudgetApp {
 
     async deleteEvent(eventId) {
         try {
-            await fetch(`/api/events/${eventId}`, {
-                method: 'DELETE'
-            });
+            await this.storage.deleteEvent(eventId);
 
             await this.loadLabels();
             await this.loadEvents();
@@ -836,6 +1051,149 @@ class BudgetApp {
         const date = new Date(dateStr);
         date.setDate(date.getDate() + days);
         return date.toISOString().split('T')[0];
+    }
+
+    /**
+     * Calculate balance timeline locally (client-side)
+     * This replaces the API call to `/api/timeline`
+     */
+    calculateLocalTimeline(allEvents, startDate, endDate, startingBalance) {
+        const start = new Date(startDate);
+        const end = new Date(endDate);
+
+        // Expand recurring events and filter by date range
+        const events = [];
+
+        allEvents.forEach(event => {
+            if (event.is_recurring || event.is_recurring === 1) {
+                // Expand recurring event
+                const occurrences = this.expandRecurringEvent(event, start, end);
+                events.push(...occurrences);
+            } else if (event.event_date) {
+                // One-off event
+                const eventDate = new Date(event.event_date);
+                if (eventDate >= start && eventDate <= end) {
+                    events.push({
+                        id: event.id,
+                        description: event.description,
+                        amount: event.amount,
+                        date: event.event_date,
+                        comment: event.comment,
+                        is_recurring: false,
+                        labels: event.labels || []
+                    });
+                }
+            }
+        });
+
+        // Sort events by date
+        events.sort((a, b) => a.date.localeCompare(b.date));
+
+        // Group events by date
+        const eventsByDate = {};
+        events.forEach(event => {
+            if (!eventsByDate[event.date]) {
+                eventsByDate[event.date] = [];
+            }
+            eventsByDate[event.date].push(event);
+        });
+
+        // Calculate daily balances
+        const timeline = [];
+        let currentBalance = startingBalance;
+        let currentDate = new Date(start);
+
+        while (currentDate <= end) {
+            const dateStr = currentDate.toISOString().split('T')[0];
+
+            // Apply events for this date
+            if (eventsByDate[dateStr]) {
+                eventsByDate[dateStr].forEach(event => {
+                    currentBalance += event.amount;
+                });
+            }
+
+            timeline.push({
+                date: dateStr,
+                balance: Math.round(currentBalance * 100) / 100 // Round to 2 decimals
+            });
+
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        return {
+            timeline: timeline,
+            events: events,
+            starting_balance: startingBalance,
+            ending_balance: currentBalance
+        };
+    }
+
+    /**
+     * Expand a recurring event into individual occurrences
+     */
+    expandRecurringEvent(event, startDate, endDate) {
+        const occurrences = [];
+
+        const recStart = new Date(event.recurrence_start);
+        const recEnd = event.recurrence_end ? new Date(event.recurrence_end) : endDate;
+
+        let current = new Date(recStart);
+        const pattern = event.recurrence_pattern;
+        const interval = event.recurrence_interval || 1;
+
+        // Fast-forward to start date
+        while (current < startDate && current <= recEnd) {
+            current = this.getNextOccurrence(current, pattern, interval);
+        }
+
+        // Generate occurrences within range
+        while (current <= recEnd && current <= endDate) {
+            if (current >= startDate) {
+                occurrences.push({
+                    id: event.id,
+                    description: event.description,
+                    amount: event.amount,
+                    date: current.toISOString().split('T')[0],
+                    comment: event.comment,
+                    is_recurring: true,
+                    labels: event.labels || []
+                });
+            }
+            current = this.getNextOccurrence(current, pattern, interval);
+        }
+
+        return occurrences;
+    }
+
+    /**
+     * Get next occurrence date for a recurring event
+     */
+    getNextOccurrence(currentDate, pattern, interval) {
+        const next = new Date(currentDate);
+
+        switch (pattern) {
+            case 'daily':
+                next.setDate(next.getDate() + interval);
+                break;
+            case 'weekly':
+                next.setDate(next.getDate() + (7 * interval));
+                break;
+            case 'biweekly':
+                next.setDate(next.getDate() + 14);
+                break;
+            case 'monthly':
+                next.setMonth(next.getMonth() + interval);
+                break;
+            case 'quarterly':
+                next.setMonth(next.getMonth() + (3 * interval));
+                break;
+            case 'yearly':
+                next.setFullYear(next.getFullYear() + interval);
+                break;
+        }
+
+        return next;
     }
 }
 
